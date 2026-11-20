@@ -1,0 +1,674 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Messenger Web App</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts (Inter) -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 9999px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+        .chat-bubble-sender {
+            background: linear-gradient(135deg, #0084FF 0%, #00C6FF 100%);
+        }
+        .chat-bubble-receiver {
+            background-color: #f0f2f5;
+        }
+        .animate-fade-in {
+            animation: fadeIn 0.25s ease-out forwards;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(6px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body class="bg-gray-100 text-gray-800 h-screen overflow-hidden flex flex-col">
+
+    <!-- APP CONTAINER -->
+    <div id="app" class="h-full w-full flex flex-col relative">
+
+        <!-- LOADING OVERLAY -->
+        <div id="loading-screen" class="absolute inset-0 bg-white z-50 flex flex-col items-center justify-center space-y-4">
+            <div class="relative flex items-center justify-center">
+                <div class="w-16 h-16 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin"></div>
+                <i class="fa-brands fa-facebook-messenger text-2xl text-blue-600 absolute"></i>
+            </div>
+            <p class="text-gray-500 font-medium animate-pulse">Đang kết nối hệ thống...</p>
+        </div>
+
+        <!-- 1. MODAL ĐĂNG NHẬP / NHẬP TÊN -->
+        <div id="login-modal" class="hidden fixed inset-0 bg-gray-900/60 backdrop-blur-sm z-40 flex items-center justify-center p-4">
+            <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full p-8 animate-fade-in text-center border border-gray-100">
+                <div class="w-20 h-20 bg-gradient-to-tr from-blue-600 to-cyan-400 rounded-full flex items-center justify-center mx-auto mb-5 shadow-lg shadow-blue-500/30">
+                    <i class="fa-brands fa-facebook-messenger text-4xl text-white"></i>
+                </div>
+                <h2 class="text-2xl font-bold text-gray-800 mb-2">Chào mừng đến với Messenger</h2>
+                <p class="text-sm text-gray-500 mb-6">Nhập tên hiển thị của bạn để bắt đầu trò chuyện cùng mọi người.</p>
+
+                <form id="login-form" class="space-y-4">
+                    <div>
+                        <div class="relative">
+                            <i class="fa-solid fa-user absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                            <input type="text" id="username-input" required maxlength="30"
+                                class="w-full pl-11 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition text-gray-800 font-medium placeholder-gray-400" 
+                                placeholder="Tên hiển thị của bạn (VD: Minh Anh)...">
+                        </div>
+                    </div>
+
+                    <!-- Chọn Màu Avatar -->
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2 text-left">Chọn màu đại diện:</label>
+                        <div class="flex justify-between items-center px-2" id="avatar-color-picker">
+                            <button type="button" data-color="from-blue-500 to-cyan-400" class="color-btn w-8 h-8 rounded-full bg-gradient-to-tr from-blue-500 to-cyan-400 ring-2 ring-offset-2 ring-blue-500 transition-transform transform hover:scale-110"></button>
+                            <button type="button" data-color="from-purple-500 to-pink-500" class="color-btn w-8 h-8 rounded-full bg-gradient-to-tr from-purple-500 to-pink-500 transition-transform transform hover:scale-110"></button>
+                            <button type="button" data-color="from-emerald-400 to-teal-600" class="color-btn w-8 h-8 rounded-full bg-gradient-to-tr from-emerald-400 to-teal-600 transition-transform transform hover:scale-110"></button>
+                            <button type="button" data-color="from-orange-400 to-amber-500" class="color-btn w-8 h-8 rounded-full bg-gradient-to-tr from-orange-400 to-amber-500 transition-transform transform hover:scale-110"></button>
+                            <button type="button" data-color="from-rose-500 to-red-600" class="color-btn w-8 h-8 rounded-full bg-gradient-to-tr from-rose-500 to-red-600 transition-transform transform hover:scale-110"></button>
+                            <button type="button" data-color="from-indigo-600 to-violet-600" class="color-btn w-8 h-8 rounded-full bg-gradient-to-tr from-indigo-600 to-violet-600 transition-transform transform hover:scale-110"></button>
+                        </div>
+                    </div>
+
+                    <button type="submit" 
+                        class="w-full py-3.5 bg-gradient-to-r from-blue-600 to-cyan-500 text-white font-semibold rounded-xl shadow-lg shadow-blue-500/30 hover:shadow-blue-500/50 hover:opacity-95 active:scale-[0.98] transition">
+                        Bắt đầu nhắn tin <i class="fa-solid fa-arrow-right ml-2 text-xs"></i>
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- 2. MAIN MESSENGER INTERFACE -->
+        <div id="main-chat" class="hidden h-full w-full flex bg-white">
+            
+            <!-- LEFT SIDEBAR: User & Conversations List -->
+            <div id="sidebar" class="w-full md:w-80 lg:w-96 flex-shrink-0 bg-white border-r border-gray-200 flex flex-col h-full transition-all duration-300">
+                <!-- Sidebar Header -->
+                <div class="p-4 border-b border-gray-100 flex items-center justify-between">
+                    <div class="flex items-center space-x-3">
+                        <div id="current-user-avatar" class="w-10 h-10 rounded-full bg-gradient-to-tr from-blue-500 to-cyan-400 text-white flex items-center justify-center font-bold text-lg shadow">
+                            U
+                        </div>
+                        <div>
+                            <h3 id="current-user-name" class="font-bold text-gray-900 text-base leading-tight">Đang tải...</h3>
+                            <span class="inline-flex items-center text-xs text-emerald-500 font-medium">
+                                <span class="w-2 h-2 bg-emerald-500 rounded-full mr-1.5 animate-pulse"></span> Đang hoạt động
+                            </span>
+                        </div>
+                    </div>
+                    <button id="logout-btn" title="Đổi tên / Đăng xuất" class="w-9 h-9 rounded-full hover:bg-gray-100 text-gray-500 hover:text-red-500 flex items-center justify-center transition">
+                        <i class="fa-solid fa-right-from-bracket"></i>
+                    </button>
+                </div>
+
+                <!-- Search Box -->
+                <div class="p-3">
+                    <div class="relative">
+                        <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 text-sm"></i>
+                        <input type="text" id="search-users" placeholder="Tìm kiếm trên Messenger..." 
+                            class="w-full pl-9 pr-4 py-2 bg-gray-100 border-none rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/40 text-gray-700">
+                    </div>
+                </div>
+
+                <!-- Channels / Direct List -->
+                <div class="flex-1 overflow-y-auto px-2 space-y-1" id="users-list-container">
+                    
+                    <!-- Global Lounge Channel (Always available) -->
+                    <div data-chat-id="global" class="chat-target-item active-chat flex items-center space-x-3 p-3 rounded-xl cursor-pointer transition bg-blue-50 text-blue-600">
+                        <div class="relative">
+                            <div class="w-12 h-12 rounded-full bg-gradient-to-tr from-blue-600 to-cyan-400 text-white flex items-center justify-center text-xl shadow">
+                                <i class="fa-solid fa-users"></i>
+                            </div>
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <div class="flex justify-between items-baseline mb-0.5">
+                                <h4 class="font-semibold text-gray-900 text-sm truncate">Phòng Chat Chung</h4>
+                                <span class="text-[11px] text-gray-400">Tất cả</span>
+                            </div>
+                            <p class="text-xs text-gray-500 truncate">Nhắn tin công khai cùng mọi người</p>
+                        </div>
+                    </div>
+
+                    <!-- Divider -->
+                    <div class="pt-3 pb-1 px-3">
+                        <span class="text-xs font-bold text-gray-400 uppercase tracking-wider">Thành viên trực tuyến</span>
+                    </div>
+
+                    <!-- Dynamic Online Users will be inserted here -->
+                    <div id="dynamic-users-list" class="space-y-1">
+                        <!-- JS renders users here -->
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- RIGHT CHAT AREA -->
+            <div id="chat-area" class="hidden md:flex flex-1 flex-col h-full bg-gray-50 relative">
+                
+                <!-- Chat Header -->
+                <div class="h-16 px-4 bg-white border-b border-gray-200 flex items-center justify-between shadow-sm z-10">
+                    <div class="flex items-center space-x-3">
+                        <!-- Mobile back button -->
+                        <button id="back-to-list-btn" class="md:hidden w-8 h-8 rounded-full text-gray-600 hover:bg-gray-100 flex items-center justify-center mr-1">
+                            <i class="fa-solid fa-arrow-left"></i>
+                        </button>
+                        
+                        <div id="chat-header-avatar" class="w-10 h-10 rounded-full bg-gradient-to-tr from-blue-600 to-cyan-400 text-white flex items-center justify-center font-bold shadow">
+                            <i class="fa-solid fa-users"></i>
+                        </div>
+                        <div>
+                            <h3 id="chat-header-title" class="font-bold text-gray-900 text-sm md:text-base leading-tight">Phòng Chat Chung</h3>
+                            <p id="chat-header-status" class="text-xs text-gray-500">Kênh trao đổi chung cho tất cả thành viên</p>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center space-x-1 text-blue-600">
+                        <button class="w-9 h-9 rounded-full hover:bg-gray-100 flex items-center justify-center transition" title="Cuộc gọi thoại (Minh họa)">
+                            <i class="fa-solid fa-phone text-base"></i>
+                        </button>
+                        <button class="w-9 h-9 rounded-full hover:bg-gray-100 flex items-center justify-center transition" title="Cuộc gọi video (Minh họa)">
+                            <i class="fa-solid fa-video text-base"></i>
+                        </button>
+                        <button class="w-9 h-9 rounded-full hover:bg-gray-100 flex items-center justify-center transition" title="Thông tin">
+                            <i class="fa-solid fa-circle-info text-base"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Messages Feed -->
+                <div id="messages-container" class="flex-1 overflow-y-auto p-4 space-y-3">
+                    <!-- Messages will be rendered dynamically here -->
+                </div>
+
+                <!-- Emoji Picker Panel (Hidden by default) -->
+                <div id="emoji-picker" class="hidden absolute bottom-20 left-4 bg-white shadow-2xl rounded-2xl border border-gray-200 p-3 grid grid-cols-6 gap-2 z-20 animate-fade-in">
+                    <button class="emoji-btn text-2xl hover:scale-125 transition">👍</button>
+                    <button class="emoji-btn text-2xl hover:scale-125 transition">❤️</button>
+                    <button class="emoji-btn text-2xl hover:scale-125 transition">😂</button>
+                    <button class="emoji-btn text-2xl hover:scale-125 transition">😮</button>
+                    <button class="emoji-btn text-2xl hover:scale-125 transition">😢</button>
+                    <button class="emoji-btn text-2xl hover:scale-125 transition">🔥</button>
+                    <button class="emoji-btn text-2xl hover:scale-125 transition">🎉</button>
+                    <button class="emoji-btn text-2xl hover:scale-125 transition">👏</button>
+                    <button class="emoji-btn text-2xl hover:scale-125 transition">😍</button>
+                    <button class="emoji-btn text-2xl hover:scale-125 transition">🙏</button>
+                    <button class="emoji-btn text-2xl hover:scale-125 transition">💯</button>
+                    <button class="emoji-btn text-2xl hover:scale-125 transition">✨</button>
+                </div>
+
+                <!-- Chat Input Bar -->
+                <div class="p-3 bg-white border-t border-gray-200 flex items-center space-x-2">
+                    <button id="toggle-emoji" class="w-9 h-9 rounded-full text-blue-600 hover:bg-gray-100 flex items-center justify-center transition flex-shrink-0">
+                        <i class="fa-solid fa-face-smile text-xl"></i>
+                    </button>
+
+                    <form id="message-form" class="flex-1 flex items-center space-x-2">
+                        <div class="relative flex-1">
+                            <input type="text" id="message-input" autocomplete="off"
+                                placeholder="Nhập tin nhắn..." 
+                                class="w-full py-2.5 px-4 bg-gray-100 border-none rounded-full text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500/50">
+                        </div>
+                        
+                        <button type="submit" id="send-btn" 
+                            class="w-10 h-10 rounded-full bg-blue-600 hover:bg-blue-700 text-white flex items-center justify-center shadow-md transition flex-shrink-0">
+                            <i id="send-icon" class="fa-solid fa-thumbs-up text-lg"></i>
+                        </button>
+                    </form>
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- Firebase SDK Modules -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, getDoc, collection, addDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // Global Environment Configurations
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'messenger-clone-app';
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {
+            apiKey: "demo-api-key",
+            authDomain: "demo-app.firebaseapp.com",
+            projectId: "demo-app",
+            storageBucket: "demo-app.appspot.com",
+            messagingSenderId: "123456789",
+            appId: "1:123456789:web:abcdef"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        // App States
+        let currentUser = null;
+        let userProfile = {
+            displayName: '',
+            avatarColor: 'from-blue-500 to-cyan-400'
+        };
+        let activeChatId = 'global'; // 'global' or target userId
+        let allUsers = [];
+        let allMessages = [];
+        let selectedAvatarColor = 'from-blue-500 to-cyan-400';
+
+        // Strict Paths Rules (Rule 1)
+        const usersCollectionRef = collection(db, 'artifacts', appId, 'public', 'data', 'users');
+        const messagesCollectionRef = collection(db, 'artifacts', appId, 'public', 'data', 'messages');
+
+        // DOM Elements
+        const loadingScreen = document.getElementById('loading-screen');
+        const loginModal = document.getElementById('login-modal');
+        const mainChat = document.getElementById('main-chat');
+        const loginForm = document.getElementById('login-form');
+        const usernameInput = document.getElementById('username-input');
+        const currentUserAvatar = document.getElementById('current-user-avatar');
+        const currentUserName = document.getElementById('current-user-name');
+        const dynamicUsersList = document.getElementById('dynamic-users-list');
+        const messagesContainer = document.getElementById('messages-container');
+        const messageForm = document.getElementById('message-form');
+        const messageInput = document.getElementById('message-input');
+        const sendIcon = document.getElementById('send-icon');
+        const logoutBtn = document.getElementById('logout-btn');
+        const searchInput = document.getElementById('search-users');
+        const sidebar = document.getElementById('sidebar');
+        const chatArea = document.getElementById('chat-area');
+        const backToListBtn = document.getElementById('back-to-list-btn');
+        const toggleEmojiBtn = document.getElementById('toggle-emoji');
+        const emojiPicker = document.getElementById('emoji-picker');
+        const chatHeaderTitle = document.getElementById('chat-header-title');
+        const chatHeaderStatus = document.getElementById('chat-header-status');
+        const chatHeaderAvatar = document.getElementById('chat-header-avatar');
+
+        // --- AUTHENTICATION & INITIALIZATION ---
+        async function initAuth() {
+            try {
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                    await signInWithCustomToken(auth, __initial_auth_token);
+                } else {
+                    await signInAnonymously(auth);
+                }
+            } catch (err) {
+                console.error("Lỗi xác thực:", err);
+            }
+        }
+
+        // Initialize Authentication on load
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                currentUser = user;
+                // Check if user profile already exists in localStorage or Firestore
+                const savedName = localStorage.getItem('messenger_user_name');
+                const savedColor = localStorage.getItem('messenger_user_color');
+
+                if (savedName) {
+                    userProfile.displayName = savedName;
+                    userProfile.avatarColor = savedColor || 'from-blue-500 to-cyan-400';
+                    await saveUserProfile(savedName, userProfile.avatarColor);
+                    showMainChatUI();
+                } else {
+                    // Prompt user for name
+                    loadingScreen.classList.add('hidden');
+                    loginModal.classList.remove('hidden');
+                }
+            }
+        });
+
+        initAuth();
+
+        // Save User Profile to Firestore & LocalStorage
+        async function saveUserProfile(name, color) {
+            if (!currentUser) return;
+            userProfile.displayName = name;
+            userProfile.avatarColor = color;
+            
+            localStorage.setItem('messenger_user_name', name);
+            localStorage.setItem('messenger_user_color', color);
+
+            const userDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'users', currentUser.uid);
+            await setDoc(userDocRef, {
+                uid: currentUser.uid,
+                displayName: name,
+                avatarColor: color,
+                status: 'online',
+                lastSeen: Date.now()
+            }, { merge: true });
+        }
+
+        // --- UI NAVIGATION & SWITCHING ---
+        function showMainChatUI() {
+            loginModal.classList.add('hidden');
+            loadingScreen.classList.add('hidden');
+            mainChat.classList.remove('hidden');
+
+            // Render current user profile info
+            currentUserName.innerText = userProfile.displayName;
+            currentUserAvatar.className = `w-10 h-10 rounded-full bg-gradient-to-tr ${userProfile.avatarColor} text-white flex items-center justify-center font-bold text-lg shadow`;
+            currentUserAvatar.innerText = getInitials(userProfile.displayName);
+
+            // Subscribe to Firestore Realtime Data
+            subscribeToUsers();
+            subscribeToMessages();
+        }
+
+        // Avatar Color Picker Handling
+        document.querySelectorAll('.color-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                document.querySelectorAll('.color-btn').forEach(b => b.classList.remove('ring-2', 'ring-offset-2', 'ring-blue-500'));
+                btn.classList.add('ring-2', 'ring-offset-2', 'ring-blue-500');
+                selectedAvatarColor = btn.getAttribute('data-color');
+            });
+        });
+
+        // Submit Login Form
+        loginForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const name = usernameInput.value.trim();
+            if (!name) return;
+
+            loadingScreen.classList.remove('hidden');
+            await saveUserProfile(name, selectedAvatarColor);
+            showMainChatUI();
+        });
+
+        // Logout / Change Name
+        logoutBtn.addEventListener('click', async () => {
+            if (confirm("Bạn có muốn đổi tên hoặc đăng nhập lại không?")) {
+                localStorage.removeItem('messenger_user_name');
+                location.reload();
+            }
+        });
+
+        // Toggle Thumbs Up icon vs Paper Plane Send icon
+        messageInput.addEventListener('input', () => {
+            if (messageInput.value.trim().length > 0) {
+                sendIcon.className = "fa-solid fa-paper-plane text-base";
+            } else {
+                sendIcon.className = "fa-solid fa-thumbs-up text-lg";
+            }
+        });
+
+        // --- FIRESTORE REALTIME LISTENERS (Rule 2: Simple Queries + In-Memory Sorting) ---
+
+        // Listen for Realtime Users
+        function subscribeToUsers() {
+            if (!currentUser) return;
+
+            onSnapshot(usersCollectionRef, (snapshot) => {
+                allUsers = [];
+                snapshot.forEach((doc) => {
+                    const data = doc.data();
+                    if (data.uid !== currentUser.uid) {
+                        allUsers.push(data);
+                    }
+                });
+                renderUsersList();
+            }, (error) => {
+                console.error("Lỗi tải danh sách người dùng:", error);
+            });
+        }
+
+        // Listen for Realtime Messages
+        function subscribeToMessages() {
+            if (!currentUser) return;
+
+            onSnapshot(messagesCollectionRef, (snapshot) => {
+                allMessages = [];
+                snapshot.forEach((doc) => {
+                    allMessages.push({ id: doc.id, ...doc.data() });
+                });
+
+                // Memory Sorting by Timestamp (Rule 2)
+                allMessages.sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
+
+                renderMessagesFeed();
+            }, (error) => {
+                console.error("Lỗi tải tin nhắn:", error);
+            });
+        }
+
+        // --- RENDERING FUNCTIONS ---
+
+        // Helper: Get initials from name
+        function getInitials(name) {
+            if (!name) return 'U';
+            const parts = name.trim().split(' ');
+            if (parts.length >= 2) {
+                return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+            }
+            return name.slice(0, 2).toUpperCase();
+        }
+
+        // Render Users in Sidebar
+        function renderUsersList() {
+            const searchTerm = searchInput.value.toLowerCase().trim();
+            const filteredUsers = allUsers.filter(u => u.displayName && u.displayName.toLowerCase().includes(searchTerm));
+
+            dynamicUsersList.innerHTML = '';
+
+            filteredUsers.forEach(user => {
+                const isSelected = activeChatId === user.uid;
+                const userEl = document.createElement('div');
+                userEl.setAttribute('data-chat-id', user.uid);
+                userEl.className = `chat-target-item flex items-center space-x-3 p-3 rounded-xl cursor-pointer transition ${isSelected ? 'bg-blue-50 text-blue-600' : 'hover:bg-gray-100 text-gray-700'}`;
+
+                userEl.innerHTML = `
+                    <div class="relative flex-shrink-0">
+                        <div class="w-12 h-12 rounded-full bg-gradient-to-tr ${user.avatarColor || 'from-blue-500 to-cyan-400'} text-white flex items-center justify-center font-bold shadow-sm">
+                            ${getInitials(user.displayName)}
+                        </div>
+                        <span class="w-3.5 h-3.5 bg-emerald-500 border-2 border-white rounded-full absolute bottom-0 right-0"></span>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <div class="flex justify-between items-baseline mb-0.5">
+                            <h4 class="font-semibold text-gray-900 text-sm truncate">${escapeHtml(user.displayName)}</h4>
+                            <span class="text-[10px] text-emerald-600 font-medium">Online</span>
+                        </div>
+                        <p class="text-xs text-gray-400 truncate">Bấm để nhắn tin riêng</p>
+                    </div>
+                `;
+
+                userEl.addEventListener('click', () => switchChatTarget(user.uid, user));
+                dynamicUsersList.appendChild(userEl);
+            });
+        }
+
+        // Search Bar Event Listener
+        searchInput.addEventListener('input', renderUsersList);
+
+        // Switch Active Chat Window
+        function switchChatTarget(targetId, targetUserObj = null) {
+            activeChatId = targetId;
+
+            // Highlight in sidebar
+            document.querySelectorAll('.chat-target-item').forEach(el => {
+                if (el.getAttribute('data-chat-id') === targetId) {
+                    el.classList.add('bg-blue-50', 'text-blue-600');
+                    el.classList.remove('hover:bg-gray-100');
+                } else {
+                    el.classList.remove('bg-blue-50', 'text-blue-600');
+                    el.classList.add('hover:bg-gray-100');
+                }
+            });
+
+            // Update Header info
+            if (targetId === 'global') {
+                chatHeaderTitle.innerText = "Phòng Chat Chung";
+                chatHeaderStatus.innerText = "Kênh trao đổi chung cho tất cả thành viên";
+                chatHeaderAvatar.className = "w-10 h-10 rounded-full bg-gradient-to-tr from-blue-600 to-cyan-400 text-white flex items-center justify-center font-bold shadow";
+                chatHeaderAvatar.innerHTML = `<i class="fa-solid fa-users"></i>`;
+            } else if (targetUserObj) {
+                chatHeaderTitle.innerText = targetUserObj.displayName;
+                chatHeaderStatus.innerText = "Đang hoạt động trên Messenger";
+                chatHeaderAvatar.className = `w-10 h-10 rounded-full bg-gradient-to-tr ${targetUserObj.avatarColor || 'from-blue-500 to-cyan-400'} text-white flex items-center justify-center font-bold shadow`;
+                chatHeaderAvatar.innerText = getInitials(targetUserObj.displayName);
+            }
+
+            // Mobile view switch
+            sidebar.classList.add('hidden', 'md:flex');
+            chatArea.classList.remove('hidden');
+            chatArea.classList.add('flex');
+
+            renderMessagesFeed();
+        }
+
+        // Back to user list on mobile
+        backToListBtn.addEventListener('click', () => {
+            chatArea.classList.add('hidden');
+            chatArea.classList.remove('flex');
+            sidebar.classList.remove('hidden');
+        });
+
+        // Global Chat Item Click Listener
+        document.querySelector('[data-chat-id="global"]').addEventListener('click', () => {
+            switchChatTarget('global');
+        });
+
+        // Render Messages List
+        function renderMessagesFeed() {
+            messagesContainer.innerHTML = '';
+
+            // Filter messages based on active conversation
+            const filteredMessages = allMessages.filter(msg => {
+                if (activeChatId === 'global') {
+                    return msg.targetId === 'global' || !msg.targetId;
+                } else {
+                    // Direct messaging between currentUser and selected User
+                    return (msg.senderId === currentUser.uid && msg.targetId === activeChatId) ||
+                           (msg.senderId === activeChatId && msg.targetId === currentUser.uid);
+                }
+            });
+
+            if (filteredMessages.length === 0) {
+                messagesContainer.innerHTML = `
+                    <div class="h-full flex flex-col items-center justify-center text-center p-6 text-gray-400">
+                        <div class="w-16 h-16 bg-gray-200/60 rounded-full flex items-center justify-center text-gray-400 text-2xl mb-3">
+                            <i class="fa-regular fa-comments"></i>
+                        </div>
+                        <p class="font-medium text-sm text-gray-500">Chưa có tin nhắn nào ở đây.</p>
+                        <p class="text-xs text-gray-400 mt-1">Hãy bắt đầu cuộc trò chuyện ngay bây giờ!</p>
+                    </div>
+                `;
+                return;
+            }
+
+            let lastSenderId = null;
+
+            filteredMessages.forEach(msg => {
+                const isMine = msg.senderId === currentUser.uid;
+                const messageWrapper = document.createElement('div');
+                messageWrapper.className = `flex items-end space-x-2 ${isMine ? 'justify-end' : 'justify-start'} animate-fade-in`;
+
+                // Format Time
+                const timeStr = msg.timestamp ? new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
+
+                if (isMine) {
+                    messageWrapper.innerHTML = `
+                        <div class="flex flex-col items-end max-w-[75%] md:max-w-[65%]">
+                            <div class="chat-bubble-sender text-white px-4 py-2.5 rounded-2xl rounded-br-xs shadow-sm text-sm leading-relaxed break-words">
+                                ${escapeHtml(msg.text)}
+                            </div>
+                            <span class="text-[10px] text-gray-400 mt-1 px-1">${timeStr}</span>
+                        </div>
+                    `;
+                } else {
+                    messageWrapper.innerHTML = `
+                        <div class="w-8 h-8 rounded-full bg-gradient-to-tr ${msg.senderAvatarColor || 'from-gray-400 to-gray-600'} text-white flex items-center justify-center text-xs font-bold shadow-sm flex-shrink-0">
+                            ${getInitials(msg.senderName)}
+                        </div>
+                        <div class="flex flex-col items-start max-w-[75%] md:max-w-[65%]">
+                            <span class="text-[11px] font-semibold text-gray-500 mb-0.5 ml-1">${escapeHtml(msg.senderName || 'Thành viên')}</span>
+                            <div class="chat-bubble-receiver text-gray-800 px-4 py-2.5 rounded-2xl rounded-bl-xs shadow-sm text-sm leading-relaxed break-words border border-gray-100">
+                                ${escapeHtml(msg.text)}
+                            </div>
+                            <span class="text-[10px] text-gray-400 mt-1 px-1">${timeStr}</span>
+                        </div>
+                    `;
+                }
+
+                messagesContainer.appendChild(messageWrapper);
+            });
+
+            // Auto scroll to bottom
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+
+        // --- SEND MESSAGE HANDLING ---
+        messageForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            if (!currentUser) return;
+
+            let text = messageInput.value.trim();
+            // Default to Thumbs up 👍 if empty
+            if (!text) {
+                text = "👍";
+            }
+
+            messageInput.value = '';
+            sendIcon.className = "fa-solid fa-thumbs-up text-lg";
+            emojiPicker.classList.add('hidden');
+
+            try {
+                await addDoc(messagesCollectionRef, {
+                    senderId: currentUser.uid,
+                    senderName: userProfile.displayName,
+                    senderAvatarColor: userProfile.avatarColor,
+                    targetId: activeChatId,
+                    text: text,
+                    timestamp: Date.now()
+                });
+            } catch (err) {
+                console.error("Lỗi gửi tin nhắn:", err);
+            }
+        });
+
+        // EMOJI PICKER HANDLING
+        toggleEmojiBtn.addEventListener('click', () => {
+            emojiPicker.classList.toggle('hidden');
+        });
+
+        document.querySelectorAll('.emoji-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                messageInput.value += btn.innerText;
+                sendIcon.className = "fa-solid fa-paper-plane text-base";
+                emojiPicker.classList.add('hidden');
+                messageInput.focus();
+            });
+        });
+
+        // Utility: HTML Escaping for Security
+        function escapeHtml(str) {
+            if (!str) return '';
+            return str.replace(/&/g, "&amp;")
+                      .replace(/</g, "&lt;")
+                      .replace(/>/g, "&gt;")
+                      .replace(/"/g, "&quot;")
+                      .replace(/'/g, "&#039;");
+        }
+
+    </script>
+</body>
+</html>
